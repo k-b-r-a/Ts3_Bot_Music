@@ -153,16 +153,11 @@ def get_command_list(sender):
 def musicplay(sender, msg,):
     song = msg.split()[1:]
     songg = " ".join(map(str, song))
-    print(driver.current_window_handle)
-    if original_window != driver.current_window_handle:
-        driver.close()
-        driver.switch_to_window(original_window)
-        pass
-    print(driver.current_window_handle)
     driver.get('https://www.youtube.com/results?search_query=' + songg)
-    WebDriverWait(driver, 5)\
+    link = WebDriverWait(driver, 5)\
         .until(EC.visibility_of_element_located((By.XPATH,'//*[@id="video-title"]')))\
-        .click()
+        .get_attribute('href')
+    driver.get(link)
     cancion = WebDriverWait(driver, 15)\
         .until(EC.visibility_of_element_located((By.XPATH,
                                            '/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[1]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string')))\
@@ -182,12 +177,6 @@ def musicplay(sender, msg):
     song = msg.split()[1:]
     songg = "".join(map(str, song))
     songg = re.sub("\[URL]|\[/URL]", "", songg)
-    if original_window != driver.current_window_handle:
-        driver.close()
-        driver.switch_to_window(original_window)
-        pass
-    print(driver.current_window_handle)
-    driver.get(songg)
     try:
         cancion = WebDriverWait(driver, 5)\
             .until(EC.visibility_of_element_located((By.XPATH,
@@ -286,7 +275,7 @@ def songstop(sender, msg,):
 
 @command('palt')
 @group('Server Admin', 'Guest')
-def songstop(sender, msg,):
+def songalt(sender, msg,):
     WebDriverWait(driver, 1)\
         .until(EC.element_to_be_clickable((By.XPATH,
                                            '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/ytd-playlist-panel-renderer/div/div[1]/div/div[2]/div[1]/div[1]/ytd-menu-renderer/div[2]/ytd-toggle-button-renderer[2]/a/yt-icon-button/button')))\

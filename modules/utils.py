@@ -157,7 +157,8 @@ def musicplay(sender, msg,):
     link = WebDriverWait(driver, 5)\
         .until(EC.visibility_of_element_located((By.XPATH,'//*[@id="video-title"]')))\
         .get_attribute('href')
-    driver.get(link)
+    driver.implicitly_wait(5)
+    driver.get(link) 
     cancion = WebDriverWait(driver, 15)\
         .until(EC.visibility_of_element_located((By.XPATH,
                                            '/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[1]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string')))\

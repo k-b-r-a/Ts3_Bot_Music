@@ -1,26 +1,26 @@
-from Moduleloader import *
+import string
+import requests
 import Moduleloader
 import Bot
 import logging
 import re
-import threading
+import subprocess
 import time
+import threading
+import random
+from Moduleloader import *
+from numpy import NaN
 from ts3.TS3Connection import TS3QueryException
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC, wait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-import subprocess
-import os
+from selenium.webdriver.common.action_chains import ActionChains
 
-import pandas as pd
-import discord
-from discord.ext import commands
+
 from urllib import parse, request
-import re
 
 __version__ = "0.4"
 bot = None
@@ -33,28 +33,156 @@ def setup(ts3bot):
     bot = ts3bot
 
 
-executable_path = "/webdrivers"
-os.environ["webdriver.chrome.driver"] = executable_path
+def openWebdriver():
+    chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--window-size=516,947')
+    chrome_options.add_argument('--hide-scrollbars')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_extension('./extensions/ezyZip.crx')
+    chrome_options.add_extension('./extensions/Tampermonkey.crx')
+    chrome_options.add_extension('./extensions/uBlock-Origin.crx')
+    chrome_options.add_extension('./extensions/Audio-Only-Youtube.crx')
+    chrome_options.add_extension('./extensions/YouTube-NonStop.crx')
+    global driver
+    driver = webdriver.Chrome(options=chrome_options)
 
-chrome_options = Options()
+    # input_nombre.send_keys('https://github.com/zerodytrash/Simple-YouTube-Age-Restriction-Bypass/raw/main/dist/Simple-YouTube-Age-Restriction-Bypass.user.js')
+openWebdriver()
 
-chrome_options.add_extension(
-    'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\extensions\\ezyZip.crx')
-chrome_options.add_extension(
-    'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\extensions\\Tampermonkey.crx')
-chrome_options.add_extension(
-    'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\extensions\\uBlock-Origin.crx')
-chrome_options.add_extension(
-    'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\extensions\\Audio_Only_Youtube_0_9_0_0.crx')
-chrome_options.add_extension(
-    'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\extensions\\YouTube-NonStop.crx')
+time.sleep(5)
 
-driver_path = 'C:\\Users\\tebit\\Desktop\\bot_ts3_v1.1\\chromedriver.exe'
-driver = webdriver.Chrome(executable_path=driver_path,
-                          chrome_options=chrome_options)
+tab_handles = driver.window_handles
+driver.switch_to.window(tab_handles[2])
+driver.close()
+driver.switch_to.window(tab_handles[0])
+driver.close()
+driver.switch_to.window(tab_handles[1])
 
-original_window = driver.current_window_handle
-# timer
+public = []
+public.append(requests.get('http://checkip.amazonaws.com').text.strip())
+apiToken = '5742926506:AAERVS76J_JFN2e2Xw_8FM0LdVSKmMC37IM'
+chatID = '-1001404826280'
+apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
+message = public_current = requests.get(
+    'http://checkip.amazonaws.com').text.strip()
+rnd = ''.join(random.choice(string.ascii_letters + string.digits)
+              for _ in range(11))
+response = requests.post(apiURL, json={
+                         'chat_id': chatID, 'text': f"#ip {message}\n https://www.youtube.com/watch?v={rnd}"})
+print(public)
+last_url = []
+song_actual = [[], []]
+list_songs = []
+
+
+def musicplay(sender, msg):
+    # putas todas
+    song = msg.split()[1:]
+    songg = " ".join(map(str, song))
+    driver.get('https://www.youtube.com/results?search_query=' + songg)
+    x = 0
+    z = False
+    time.sleep(1)
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[@id="video-title"]/yt-formatted-string'))).click()
+    except Exception:
+        print('p not work')
+        x = 1
+        pass
+    time.sleep(2)
+    try:
+        cancion = driver.find_element(
+            By.XPATH, '//*[@id="title"]/h1' or '//*[@id="layout"]/ytmusic-player-bar/div[2]/div[2]').text
+        link = driver.current_url
+    except Exception:
+        pass
+    time.sleep(1)
+    webdriver.ActionChains(driver, 1).move_to_element(driver.find_element(
+        By.XPATH, '//*[@id="movie_player"]/div[1]/video')).perform()
+    try:
+        duracion = driver.find_element(
+            By.CSS_SELECTOR, '#movie_player > div.ytp-chrome-bottom > div.ytp-chrome-controls > div.ytp-left-controls > div.ytp-time-display.notranslate > span:nth-child(2) > span.ytp-time-duration').text
+        print(duracion)
+        global intervalG
+        intervalG = re.split(":", duracion)
+    except Exception:
+        pass
+    try:
+        if len(intervalG) <= 2:
+            intervalG[0] = int(intervalG[0]) * 60
+            intervalG[1] = int(intervalG[1])
+            intervalG = intervalG[0] + intervalG[1]
+        else:
+            intervalG[0] = int(intervalG[0]) * 60**2
+            intervalG[1] = int(intervalG[1]) * 60
+            intervalG[2] = int(intervalG[2])
+            intervalG = intervalG[0] + intervalG[1] + intervalG[2]
+        print(intervalG)
+    except Exception:
+        print('error time song')
+    try:
+        hilo = threading.Thread(target=funcion_en_hilo(intervalG, sender))
+        hilo.start()
+    except Exception:
+        print(Exception)
+    Bot.send_msg_to_client(bot.ts3conn, sender,
+                           "=============================================")
+    Bot.send_msg_to_client(bot.ts3conn, sender, "Reproduciendo " + cancion)
+    Bot.send_msg_to_client(bot.ts3conn, sender, "usa !help para ver comandos")
+    Bot.send_msg_to_client(bot.ts3conn, sender, link)
+    Bot.send_msg_to_client(bot.ts3conn, sender,
+                           "=============================================")
+
+
+def musicqueue(sender, msg):
+    song = msg.split()
+    if len(song) != 1:
+        list_songs.append(msg)
+        if len(list_songs) == 1:
+            hilo = threading.Thread(target=funcion_en_hilo(intervalG, sender))
+            hilo.start()
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "=============================================")
+        for i in list_songs:
+            song = i.split()[1:]
+            songg = " ".join(map(str, song))
+            Bot.send_msg_to_client(bot.ts3conn, sender,
+                                   f'{list_songs.index(i)}. {songg}')
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "usa !help para ver comandos")
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "=============================================")
+    else:
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "=============================================")
+        for i in list_songs:
+            song = i.split()[1:]
+            songg = " ".join(map(str, song))
+            Bot.send_msg_to_client(bot.ts3conn, sender,
+                                   f'{list_songs.index(i)}. {songg}')
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "usa !help para ver comandos")
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               "=============================================")
+
+
+def funcion_en_hilo(intervalG, sender):
+    if len(list_songs) != 0:
+        time.sleep(intervalG)
+        sigsong(sender)
+    else:
+        print('not more songs')
+
+
+def sigsong(sender):
+    try:
+        temporal = list_songs[0]
+        list_songs.pop(0)
+        musicplay(sender, temporal)
+    except Exception:
+        print("Error")
 
 
 class Timer(threading.Thread):
@@ -74,66 +202,56 @@ class Timer(threading.Thread):
 
 class timer5(Timer):
     interval = 300  # Intervalo en segundos.
-
     # Función a ejecutar.
+
     def timer(self):
+
         try:
-            duracion = driver.find_element_by_css_selector(
-                '#movie_player > div.ytp-chrome-bottom > div.ytp-chrome-controls > div.ytp-left-controls > div.ytp-time-display.notranslate > span:nth-child(2) > span.ytp-time-duration').get_attribute('textContent')
-            duracion = re.sub(":", "", duracion)
-            duracion = int(duracion)
-            print(duracion)
-            if duracion >= 750:
-                webdriver.ActionChains(driver).key_down(
-                    Keys.SHIFT).send_keys("N").perform()
-                pass
-        except Exception:
-            print('fuk dady')
-            pass
+            def get_ip():
+                try:
+                    public_current = requests.get(
+                        'http://checkip.amazonaws.com').text.strip()
+                except:
+                    public_current = 'unknown'
+                return (public_current)
+
+            def send_ip(message):
+
+                apiToken = '5742926506:AAERVS76J_JFN2e2Xw_8FM0LdVSKmMC37IM'
+                chatID = '-1001404826280'
+                apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
+                if message != public[0]:
+                    try:
+                        response = requests.post(
+                            apiURL, json={'chat_id': chatID, 'text': f"#ip {message}"})
+                        public[0] = requests.get(
+                            'http://checkip.amazonaws.com').text.strip()
+                    except Exception as e:
+                        print(e)
+
+            send_ip(get_ip())
+        except Exception as e:
+            print(e)
 
 
 timer5 = timer5()
 timer5.start()
 
-print(original_window)
 
-bot1 = commands.Bot(command_prefix='!', description="This is the hekoer bot")
-
-
-@bot1.command()
-async def ping(ctx):
-    ctx.send('pong')
-
-
-@bot1.command()
-async def pds(ctx, message):
-    driver.get('https://www.youtube.com/results?search_query=' + message)
-    WebDriverWait(driver, 5)\
-        .until(EC.element_to_be_clickable((By.XPATH,
-                                           '//*[@id="thumbnail"]'.replace(' ', '.'))))\
-        .click()
-    cancion = WebDriverWait(driver, 5)\
-        .until(EC.element_to_be_clickable((By.XPATH,
-                                           '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string')))\
-        .text
-    await ctx.send("Reproduciendo " + cancion + 'usa !help para ver comandos')
-    # Busqueda de cancion
-
-bot1.login('ODc1NTQ1NzQ4NTI2MjE1MjU4.YRXFhQ.va6j_UEfcGAqPEiEPonYP781OTQ')
-
-
-@command('hello',)
+@command('test')
 @group('Server Admin', 'Guest')
-def hello(sender):
-    Bot.send_msg_to_client(bot.ts3conn, sender, "Hello Admin!")
+def test(sender, msg):
+    get_command_list('!help')
 
 
-@command('help',)
+@command('help')
 @group('Server Admin', 'Guest')
-def get_command_list(sender):
+def get_command_list(sender, msg):
     Bot.send_msg_to_client(bot.ts3conn, sender,
                            "=============================================")
     Bot.send_msg_to_client(bot.ts3conn, sender, "!p = buscar cancion")
+    Bot.send_msg_to_client(bot.ts3conn, sender,
+                           "!q = agrega cancion a la cola")
     Bot.send_msg_to_client(bot.ts3conn, sender, "!pl = url de playlist")
     Bot.send_msg_to_client(bot.ts3conn, sender, "!pn = siguiente cancion")
     Bot.send_msg_to_client(bot.ts3conn, sender, "!pa = cancion anterior")
@@ -150,62 +268,39 @@ def get_command_list(sender):
 
 @command('p')
 @group('Server Admin', 'Guest')
-def musicplay(sender, msg,):
-    song = msg.split()[1:]
-    songg = " ".join(map(str, song))
-    driver.get('https://www.youtube.com/results?search_query=' + songg)
-    link = WebDriverWait(driver, 5)\
-        .until(EC.visibility_of_element_located((By.XPATH,'//*[@id="video-title"]')))\
-        .get_attribute('href')
-    driver.implicitly_wait(5)
-    driver.get(link) 
-    cancion = WebDriverWait(driver, 15)\
-        .until(EC.visibility_of_element_located((By.XPATH,
-                                           '/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[1]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string')))\
-        .text
-    Bot.send_msg_to_client(bot.ts3conn, sender,
-                           "=============================================")
-    Bot.send_msg_to_client(bot.ts3conn, sender, "Reproduciendo " + cancion)
-    Bot.send_msg_to_client(bot.ts3conn, sender, "usa !help para ver comandos")
-    Bot.send_msg_to_client(bot.ts3conn, sender,
-                           "=============================================")
-    # Busqueda de cancion
+def musicplayf(sender, msg):
+    musicplay(sender, msg)
+
+
+@command('q')
+@group('Server Admin', 'Guest')
+def musicqueuef(sender, msg):
+    musicqueue(sender, msg)
 
 
 @command('pl')
 @group('Server Admin', 'Guest')
-def musicplay(sender, msg):
+def musicplayl(sender, msg):
     song = msg.split()[1:]
     songg = "".join(map(str, song))
     songg = re.sub("\[URL]|\[/URL]", "", songg)
+    driver.get(songg)
     try:
-        cancion = WebDriverWait(driver, 5)\
-            .until(EC.visibility_of_element_located((By.XPATH,
-                                               '/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[1]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string')))\
-            .text
+        cancion = driver.find_elements_by_xpath(
+            '//*[@id="container"]/h1/yt-formatted-string' or '//*[@id="container"]/h1/yt-formatted-string')[0].text
     except Exception:
         pass
-    try:
-        cancion = WebDriverWait(driver, 15)\
-            .until(EC.visibility_of_element_located((By.XPATH,
-                                               '/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string')))\
-            .text
-    except Exception:
-        pass
-    Bot.send_msg_to_client(bot.ts3conn, sender,
-                           "=============================================")
-    Bot.send_msg_to_client(bot.ts3conn, sender, "Reproduciendo " + cancion)
     try:
         lista = WebDriverWait(driver, 5)\
             .until(EC.visibility_of_element_located((By.XPATH,
-                                               '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/ytd-playlist-panel-renderer/div/div[1]/div/div[1]/div[1]/h3/yt-formatted-string/a')))\
+                                                     '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/ytd-playlist-panel-renderer/div/div[1]/div/div[1]/div[1]/h3/yt-formatted-string/a')))\
             .text
     except Exception:
         pass
     try:
         lista1 = WebDriverWait(driver, 5)\
             .until(EC.visibility_of_element_located((By.XPATH,
-                                               '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/ytd-playlist-panel-renderer/div/div[1]/div/div[1]/div[1]/div/yt-formatted-string')))\
+                                                     '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/ytd-playlist-panel-renderer/div/div[1]/div/div[1]/div[1]/div/yt-formatted-string')))\
             .text
     except Exception:
         pass
@@ -214,6 +309,9 @@ def musicplay(sender, msg):
                                "Reproduciendo " + lista + " De " + lista1)
     except Exception:
         pass
+    Bot.send_msg_to_client(bot.ts3conn, sender,
+                           "=============================================")
+    Bot.send_msg_to_client(bot.ts3conn, sender, "Reproduciendo " + cancion)
     Bot.send_msg_to_client(bot.ts3conn, sender, "usa !help para ver comandos")
     Bot.send_msg_to_client(bot.ts3conn, sender,
                            "=============================================")
@@ -318,29 +416,48 @@ def songmenos10(sender, msg,):
 def songinfo(sender, msg,):
     urlcurrent = driver.current_url
     try:
-        info = driver.find_elements_by_xpath(
-            "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[8]/div[1]/div[2]/ytd-video-primary-info-renderer/div/h1/yt-formatted-string")[0].text
+        info = driver.find_element(
+            By.XPATH, '//*[@id="title"]/h1' or '//*[@id="title"]' or '//*[@id="title"]/h1/yt-formatted-string').text
+    except Exception:
+        z = 1
+        print('not found info')
+        pass
+    try:
+        if z == 1:
+            try:
+                info = driver.find_element(
+                    By.XPATH, '//*[@id="layout"]/ytmusic-player-bar/div[2]/div[2]')[0].text
+            except Exception:
+                print('not found info ytmus')
+                pass
     except Exception:
         pass
     try:
-        info = driver.find_elements_by_xpath(
-            "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/ytd-watch-metadata/div/div[1]/h1/yt-formatted-string")[0].text
+        elemento_objetivo = duracion = driver.find_element(
+            By.CSS_SELECTOR, '#movie_player > div.html5-video-container > video')
+        ActionChains(driver, 1000).move_to_element(elemento_objetivo)
+        duracion = driver.find_element(
+            By.CSS_SELECTOR, '#movie_player > div.ytp-chrome-bottom > div.ytp-chrome-controls > div.ytp-left-controls > div.ytp-time-display.notranslate > span:nth-child(2) > span.ytp-time-current').text
+        intervalG = re.split(":", duracion)
     except Exception:
         pass
+
+    Bot.send_msg_to_client(bot.ts3conn, sender,
+                           "=============================================")
+    Bot.send_msg_to_client(bot.ts3conn, sender, f'url: {urlcurrent}')
     try:
-        info = driver.find_elements_by_xpath(
-            "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string")[0].text
+        Bot.send_msg_to_client(bot.ts3conn, sender, f'{info}')
     except Exception:
         pass
     Bot.send_msg_to_client(bot.ts3conn, sender,
-                           "=============================================")
-    Bot.send_msg_to_client(bot.ts3conn, sender, info)
-    Bot.send_msg_to_client(bot.ts3conn, sender, urlcurrent)
+                           f'minuto {intervalG[0]} : {intervalG[1]}')
+
     Bot.send_msg_to_client(bot.ts3conn, sender, "usa !help para ver comandos")
     Bot.send_msg_to_client(bot.ts3conn, sender,
                            "=============================================")
 
-@command('purga')
+
+@command('purge')
 @group('Server Admin', 'Guest')
 def purgar(sender, msg,):
     driver.delete_all_cookies()
@@ -350,6 +467,7 @@ def purgar(sender, msg,):
     Bot.send_msg_to_client(bot.ts3conn, sender, "usa !help para ver comandos")
     Bot.send_msg_to_client(bot.ts3conn, sender,
                            "=============================================")
+
 
 @command('reset')
 @group('Server Admin', 'Guest')

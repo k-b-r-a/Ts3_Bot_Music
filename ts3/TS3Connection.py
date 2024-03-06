@@ -1,8 +1,10 @@
-"""Main TS3Api File"""
+# pylint: disable=invalid-name,import-outside-toplevel,too-many-public-methods
+"""
+Main TS3Api File
+"""
 import logging
 import socket
 import sys
-import telnetlib
 import threading
 import time
 import traceback
@@ -14,6 +16,7 @@ from . import utilities
 from .Events import TS3Event
 from .TS3QueryExceptionType import TS3QueryExceptionType
 from .utilities import TS3Exception, TS3ConnectionClosedException
+from .socket_wrapper import SocketWrapper
 
 
 class TS3Connection:
@@ -22,6 +25,7 @@ class TS3Connection:
     messages from the Teamspeak 3 server.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(self, host="127.0.0.1", port=10011, log_file="api.log", use_ssh=False,
                  username=None, password=None, accept_all_keys=False, host_key_file=None,
                  use_system_hosts=False, sshtimeout=None, sshtimeoutlimit=3):
@@ -58,7 +62,7 @@ class TS3Connection:
         self._logger.addHandler(file_handler)
 
         if not use_ssh:
-            self._conn = telnetlib.Telnet(host, port, timeout=socket.getdefaulttimeout())
+            self._conn = SocketWrapper(host, port, timeout=socket.getdefaulttimeout())
             self._logger.debug(self._conn.read_until(b"\n\r"))
             self._logger.debug(self._conn.read_until(b"\n\r"))
         else:
@@ -104,7 +108,7 @@ class TS3Connection:
         """
         if params is None:
             params = []
-        args = list()
+        args = []
         for param in params:
             args.append("-" + param)
         clist = self._send("clientlist", args)
@@ -197,6 +201,8 @@ class TS3Connection:
                     self._logger.debug(
                         "Releasing lock for closed connection to unfreeze threads ...")
                     self._conn_lock.release()
+                # We really want to ignore ALL exceptions here!
+                # pylint: disable=bare-except
                 except:
                     pass
                 continue
@@ -228,7 +234,7 @@ class TS3Connection:
         :rtype: dict[str, str]
         """
         resp = resp.decode(encoding='UTF-8').split(" ")
-        info = dict()
+        info = {}
         for part in resp:
             split = part.split('=', 1)
             # TODO: Handle empty data?
@@ -249,7 +255,7 @@ class TS3Connection:
         """
         # Multiple responses are split by "|"
         split_list = resp.split(b"|")
-        dict_list = list()
+        dict_list = []
         for response in split_list:
             if len(response) > 0:
                 dict_list.append(TS3Connection._parse_resp_to_dict(response))
@@ -339,9 +345,9 @@ class TS3Connection:
 
     def register_for_unknown_events(self, event_listener=None, weak_ref=True):
         """
-        Register the event_listener for unknown events. Note: This will not actually call any register
-        function, but will only add the event_listener to the list of functions to inform on unknown
-        events. _event_type will hold the event type sent by the server.
+        Register the event_listener for unknown events. Note: This will not actually call any
+        register function, but will only add the event_listener to the list of functions to
+        inform on unknown events. _event_type will hold the event type sent by the server.
         :param event_listener: Blinker signal handler function to be informed:
                                on_event(sender, **kw), kw will contain the event
         :param weak_ref: Use weak refs for blinker, causing eventlisteners that go out of scope to
@@ -403,7 +409,7 @@ class TS3Connection:
         """
         if params is None:
             params = []
-        args = list()
+        args = []
         for param in params:
             args.append("-" + param)
         channel_list = self._send("channellist", args)
@@ -417,7 +423,7 @@ class TS3Connection:
                     Returns a liszt of channel names. (Convenience Wrapper around channellist)
                     :return:  List of channel names
                   """
-        names = list()
+        names = []
         channels = self.channellist()
         for channel in channels:
             names.append(channel.get("channel_name", ""))
@@ -441,7 +447,7 @@ class TS3Connection:
         :rtype: list[dict[str, str]]
         """
         channel_candidates = self.channelfind(name)
-        channel_list = list()
+        channel_list = []
         for candidate in channel_candidates:
             if candidate.get("channel_name", "") == name:
                 channel_list.append(candidate)
@@ -480,6 +486,30 @@ class TS3Connection:
             if server_group["name"] == name:
                 return server_group
 
+    def hostinfo(self):
+        """
+        Returns hostinfo for the current connected instance.
+        :return: Dictionary of host information.
+        :rtype: dict[str,str]
+        """
+        return self._parse_resp_to_dict(self._send("hostinfo"))
+
+    def instanceinfo(self):
+        """
+        Returns instanceinfo for the current connected instance.
+        :return: Dictionary of instance information.
+        :rtype: dict[str,str]
+        """
+        return self._parse_resp_to_dict(self._send("instanceinfo"))
+
+    def serverinfo(self):
+        """
+        Returns serverinfo for the current selected virtual server.
+        :return: Dictionary of server information.
+        :rtype: dict[str,str]
+        """
+        return self._parse_resp_to_dict(self._send("serverinfo"))
+
     def clientinfo(self, client_id):
         """
         Returns clientinfo for a client specified by its id.
@@ -488,6 +518,17 @@ class TS3Connection:
         :rtype: dict[str,str]
         """
         return self._parse_resp_to_dict(self._send("clientinfo", ["clid=" + str(client_id)]))
+
+    def clientpoke(self, clid, msg):
+        """
+        Pokes a client with a message.
+        :param clid: client_id of the client to poke
+        :param msg: Message to send.
+        :type clid: int
+        :type msg: str
+        """
+        return self._parse_resp_to_dict(self._send("clientpoke", ["clid=" + str(clid),
+                                                                  "msg=" + str(msg)]))
 
     def _parse_resp(self, resp):
         """
@@ -506,7 +547,7 @@ class TS3Connection:
             return resp
         # Events
         if resp.startswith(b'notify'):
-            event = dict()
+            event = {}
             event_type = "Unknown"
             try:
                 resp = resp.decode(encoding='UTF-8').split(" ")
@@ -518,6 +559,8 @@ class TS3Connection:
                         event[key] = utilities.unescape(value)
                 event = Events.EventParser.parse_event(event, event_type)
                 return event
+            # We really want to ignore ALL exceptions here!
+            # pylint: disable=bare-except
             except:
                 self._logger.error("Error parsing event")
                 self._logger.error(resp)
@@ -630,12 +673,21 @@ class TS3QueryException(TS3Exception):
 
     @property
     def message(self):
+        """
+        Get the exception message.
+        """
         return self._msg
 
     @property
     def type(self):
+        """
+        Get the exception type.
+        """
         return self._type
 
     @property
     def id(self):
+        """
+        Get the exception id.
+        """
         return self._type.numerator

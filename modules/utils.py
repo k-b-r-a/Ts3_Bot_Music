@@ -8,6 +8,7 @@ import subprocess
 import time
 import threading
 import random
+import os
 from Moduleloader import *
 from numpy import NaN
 from ts3.TS3Connection import TS3QueryException
@@ -47,7 +48,7 @@ def openWebdriver():
     global driver
     driver = webdriver.Chrome(options=chrome_options)
 
-    # input_nombre.send_keys('https://github.com/zerodytrash/Simple-YouTube-Age-Restriction-Bypass/raw/main/dist/Simple-YouTube-Age-Restriction-Bypass.user.js')
+
 openWebdriver()
 
 time.sleep(5)
@@ -58,6 +59,28 @@ driver.close()
 driver.switch_to.window(tab_handles[0])
 driver.close()
 driver.switch_to.window(tab_handles[1])
+
+
+# install age Simple-YouTube-Age-Restriction-Bypass
+driver.get('chrome://extensions/')
+webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
+    Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.ENTER).perform()
+webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
+    Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.ENTER).perform()
+time.sleep(1)
+tab_handles = driver.window_handles
+driver.close()
+driver.switch_to.window(tab_handles[1])
+WebDriverWait(driver, 5).until(
+    EC.element_to_be_clickable((By.XPATH, '//*[@id="div_dXRpbHNfdXRpbHM_tab_util_h"]'))).click()
+driver.find_element(By.ID, ('input_ZmlsZV91dGlscw_file')).send_keys(
+    os.getcwd()+"./extensions/Simple-YouTube-Age-Restriction-Bypass.user.js")
+time.sleep(1)
+tab_handles = driver.window_handles
+driver.switch_to.window(tab_handles[1])
+webdriver.ActionChains(driver, 1).send_keys(Keys.ENTER).perform()
+driver.switch_to.window(tab_handles[0])
+
 
 public = []
 public.append(requests.get('http://checkip.amazonaws.com').text.strip())
@@ -77,7 +100,6 @@ list_songs = []
 
 
 def musicplay(sender, msg):
-    # putas todas
     song = msg.split()[1:]
     songg = " ".join(map(str, song))
     driver.get('https://www.youtube.com/results?search_query=' + songg)

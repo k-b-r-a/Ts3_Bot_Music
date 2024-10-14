@@ -1,4 +1,3 @@
-import string
 import requests
 import Moduleloader
 import Bot
@@ -7,9 +6,9 @@ import re
 import subprocess
 import time
 import threading
-import random
 import os
 from Moduleloader import *
+import configparser
 from numpy import NaN
 from ts3.TS3Connection import TS3QueryException
 from selenium import webdriver
@@ -62,10 +61,11 @@ driver.switch_to.window(tab_handles[1])
 
 
 # install age Simple-YouTube-Age-Restriction-Bypass
+
 driver.get('chrome://extensions/')
-webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
-    Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.ENTER).perform()
-webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
+webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
+    Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.ENTER).perform()
+webdriver.ActionChains(driver, 1).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(
     Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(Keys.ENTER).perform()
 time.sleep(1)
 tab_handles = driver.window_handles
@@ -81,19 +81,19 @@ driver.switch_to.window(tab_handles[1])
 webdriver.ActionChains(driver, 1).send_keys(Keys.ENTER).perform()
 driver.switch_to.window(tab_handles[0])
 
+config = configparser.ConfigParser()
+config.read('../config.ini')
+if config.has_section('Telegram'):
+    public = []
+    public.append(requests.get('http://checkip.amazonaws.com').text.strip())
+    apiToken = config["Telegram"]["ApiToken"]
+    chatID = config["Telegram"]["ChatID"]
+    apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
+    message = public_current = requests.get(
+        'http://checkip.amazonaws.com').text.strip()
+    response = requests.post(apiURL, json={
+                             'chat_id': chatID, 'text': f"#ip {message}"})
 
-public = []
-public.append(requests.get('http://checkip.amazonaws.com').text.strip())
-apiToken = '5742926506:AAERVS76J_JFN2e2Xw_8FM0LdVSKmMC37IM'
-chatID = '-1001404826280'
-apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
-message = public_current = requests.get(
-    'http://checkip.amazonaws.com').text.strip()
-rnd = ''.join(random.choice(string.ascii_letters + string.digits)
-              for _ in range(11))
-response = requests.post(apiURL, json={
-                         'chat_id': chatID, 'text': f"#ip {message}\n https://www.youtube.com/watch?v={rnd}"})
-print(public)
 last_url = []
 song_actual = [[], []]
 list_songs = []
@@ -227,33 +227,33 @@ class timer5(Timer):
     # Función a ejecutar.
 
     def timer(self):
-
-        try:
-            def get_ip():
-                try:
-                    public_current = requests.get(
-                        'http://checkip.amazonaws.com').text.strip()
-                except:
-                    public_current = 'unknown'
-                return (public_current)
-
-            def send_ip(message):
-
-                apiToken = '5742926506:AAERVS76J_JFN2e2Xw_8FM0LdVSKmMC37IM'
-                chatID = '-1001404826280'
-                apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
-                if message != public[0]:
+        if config.has_section('Telegram'):
+            try:
+                def get_ip():
                     try:
-                        response = requests.post(
-                            apiURL, json={'chat_id': chatID, 'text': f"#ip {message}"})
-                        public[0] = requests.get(
+                        public_current = requests.get(
                             'http://checkip.amazonaws.com').text.strip()
-                    except Exception as e:
-                        print(e)
+                    except:
+                        public_current = 'unknown'
+                    return (public_current)
 
-            send_ip(get_ip())
-        except Exception as e:
-            print(e)
+                def send_ip(message):
+
+                    apiToken = config["Telegram"]["ApiToken"]
+                    chatID = config["Telegram"]["ChatID"]
+                    apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
+                    if message != public[0]:
+                        try:
+                            response = requests.post(
+                                apiURL, json={'chat_id': chatID, 'text': f"#ip {message}"})
+                            public[0] = requests.get(
+                                'http://checkip.amazonaws.com').text.strip()
+                        except Exception as e:
+                            print(e)
+
+                send_ip(get_ip())
+            except Exception as e:
+                print(e)
 
 
 timer5 = timer5()

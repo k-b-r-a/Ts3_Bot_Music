@@ -6,7 +6,7 @@ set VENV_NAME=venv
 rem Check if the virtual environment already exists
 if not exist %VENV_NAME% (
     rem Create a Python virtual environment
-    python -m venv %VENV_NAME%
+    py -3.10 -m venv %VENV_NAME%
 	
 	rem Activate the virtual environment
 	call %VENV_NAME%\Scripts\activate

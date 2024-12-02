@@ -1,6 +1,6 @@
 """Commandhandler for the Teamspeak3 Bot."""
 import ClientInfo
-import ts3.Events as Events
+import ts3API.Events as Events
 import logging
 import Bot
 logger = logging.getLogger("bot")
@@ -10,6 +10,7 @@ class CommandHandler:
     """
     Command handler class that listens for PrivateMessages and informs registered handlers of possible commands.
     """
+
     def __init__(self, ts3conn):
         """
         Create new CommandHandler.
@@ -56,7 +57,7 @@ class CommandHandler:
                 if clientinfo.is_in_servergroups(group):
                     return True
         return False
-        
+
     def handle_command(self, msg, sender=0):
         """
         Handle a new command by informing the corresponding handlers.
@@ -69,16 +70,18 @@ class CommandHandler:
             command = command[1:]
             handlers = self.handlers.get(command)
             ci = ClientInfo.ClientInfo(sender, self.ts3conn)
-            handled = False 
+            handled = False
             if handlers is not None:
                 for handler in handlers:
                     if self.check_permission(handler, ci):
                         handled = True
                         handler(sender, msg)
                 if not handled:
-                    Bot.send_msg_to_client(self.ts3conn, sender, "You are not allowed to use this command!")
+                    Bot.send_msg_to_client(
+                        self.ts3conn, sender, "You are not allowed to use this command!")
             else:
-                Bot.send_msg_to_client(self.ts3conn, sender, "I cannot interpret your command. I am very sorry. :(")
+                Bot.send_msg_to_client(
+                    self.ts3conn, sender, "I cannot interpret your command. I am very sorry. :(")
                 logger.info("Unknown command " + msg + " received!")
 
     def handle_command1(self, msg, sender=0):
@@ -92,11 +95,12 @@ class CommandHandler:
                 handled = True
                 handler(msg)
             if not handled:
-                Bot.send_msg_to_client(self.ts3conn, sender, "You are not allowed to use this command!")
+                Bot.send_msg_to_client(
+                    self.ts3conn, sender, "You are not allowed to use this command!")
             else:
-                Bot.send_msg_to_client(self.ts3conn, sender, "I cannot interpret your command. I am very sorry. :(")
+                Bot.send_msg_to_client(
+                    self.ts3conn, sender, "I cannot interpret your command. I am very sorry. :(")
                 logger.info("Unknown command " + msg + " received!")
-
 
     def inform(self, event):
         """
@@ -105,13 +109,17 @@ class CommandHandler:
         """
         if type(event) is Events.TextMessageEvent:
             if event.targetmode == "Private":
-                if event.invoker_id != int(self.ts3conn.whoami()["client_id"]):  # Don't talk to yourself ...
+                # Don't talk to yourself ...
+                if event.invoker_id != int(self.ts3conn.whoami()["client_id"]):
                     ci = ClientInfo.ClientInfo(event.invoker_id, self.ts3conn)
-                    self.logger.info("Message: " + event.message + " from: " + ci.name)
+                    self.logger.info(
+                        "Message: " + event.message + " from: " + ci.name)
                     self.handle_command(event.message, sender=event.invoker_id)
 
         if type(event) is Events.TextMessageEvent:
-            if event.invoker_id != int(self.ts3conn.whoami()["client_id"]):  # Don't talk to yourself ...
+            # Don't talk to yourself ...
+            if event.invoker_id != int(self.ts3conn.whoami()["client_id"]):
                 ci = ClientInfo.ClientInfo(event.invoker_id, self.ts3conn)
-                self.logger.info("Message: " + event.message + " from: " + ci.name)
+                self.logger.info(
+                    "Message: " + event.message + " from: " + ci.name)
                 self.handle_command1(event.message, sender=event.invoker_id)

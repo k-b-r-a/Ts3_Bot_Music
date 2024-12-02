@@ -9,9 +9,8 @@ import threading
 import os
 from Moduleloader import *
 import configparser
-from numpy import NaN
-from ts3.TS3Connection import TS3QueryException
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -42,10 +41,12 @@ def openWebdriver():
     chrome_options.add_extension('./extensions/ezyZip.crx')
     chrome_options.add_extension('./extensions/Tampermonkey.crx')
     chrome_options.add_extension('./extensions/uBlock-Origin.crx')
-    chrome_options.add_extension('./extensions/Audio-Only-Youtube.crx')
+    chrome_options.add_extension('./extensions/Music-Mode-for-YouTube.crx')
     chrome_options.add_extension('./extensions/YouTube-NonStop.crx')
     global driver
-    driver = webdriver.Chrome(options=chrome_options)
+    service = ChromeService('./chromedriver/chromedriver.exe')
+    driver = webdriver.Chrome(
+        service=service, options=chrome_options)
 
 
 openWebdriver()
@@ -53,6 +54,8 @@ openWebdriver()
 time.sleep(5)
 
 tab_handles = driver.window_handles
+driver.switch_to.window(tab_handles[3])
+driver.close()
 driver.switch_to.window(tab_handles[2])
 driver.close()
 driver.switch_to.window(tab_handles[0])
@@ -88,7 +91,7 @@ if config.has_section('Telegram'):
     public.append(requests.get('http://checkip.amazonaws.com').text.strip())
     apiToken = config["Telegram"]["ApiToken"]
     chatID = config["Telegram"]["ChatID"]
-    apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
+    apiURL = f"https://api.telegram.org/bot{apiToken}/sendMessage"
     message = public_current = requests.get(
         'http://checkip.amazonaws.com').text.strip()
     response = requests.post(apiURL, json={
@@ -305,7 +308,8 @@ def musicqueuef(sender, msg):
 def musicplayl(sender, msg):
     song = msg.split()[1:]
     songg = "".join(map(str, song))
-    songg = re.sub("\[URL]|\[/URL]", "", songg)
+    songg = re.sub(r'\[URL]|\[/URL]', "", songg)
+
     driver.get(songg)
     try:
         cancion = driver.find_elements_by_xpath(

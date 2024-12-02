@@ -3,7 +3,7 @@ import sys
 import logging
 import threading
 import os
-from ts3.utilities import TS3ConnectionClosedException
+from ts3API.utilities import TS3ConnectionClosedException
 
 logger = None
 bot = None
@@ -53,13 +53,15 @@ def main():
         logger.propagate = 0
         logger.setLevel(logging.INFO)
         file_handler = logging.FileHandler("bot.log", mode='a+')
-        formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s: %(levelname)s: %(message)s")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
         logger.info('Started')
     sys.excepthook = exception_handler
     config = Bot.Ts3Bot.parse_config(logger)
     bot = Bot.Ts3Bot.bot_from_config(config)
+
 
 if __name__ == "__main__":
     main()

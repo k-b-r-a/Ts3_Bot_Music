@@ -3,7 +3,7 @@ import Bot
 import random
 import codecs
 import Moduleloader
-import ts3.Events as Events
+import ts3API.Events as Events
 
 bot = None
 # Server groups who should not receiver quotes upon joining the server
@@ -70,5 +70,5 @@ def add_quote(sender, msg):
     """
     if len(msg) > len("!addQuote "):
         add(msg[len("!addQuote "):])
-        Bot.send_msg_to_client(bot.ts3conn, sender, "Quote '" + msg[len("!addQuote "):] + "' was added.")
-
+        Bot.send_msg_to_client(
+            bot.ts3conn, sender, "Quote '" + msg[len("!addQuote "):] + "' was added.")

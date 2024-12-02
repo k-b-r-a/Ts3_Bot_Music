@@ -3,11 +3,11 @@ from threading import Thread
 import sys
 import traceback
 from Moduleloader import *
-import ts3.Events as Events
+import ts3API.Events as Events
 import threading
-import ts3
+import ts3API
 import Bot
-from ts3.utilities import TS3Exception
+from ts3API.utilities import TS3Exception
 afkMover = None
 afkStopper = threading.Event()
 bot = None
@@ -36,13 +36,15 @@ def stop_afkmover(sender=None, msg=None):
     afkStopper.set()
     afkMover = None
 
+
 @command('afkgetclientchannellist')
 def get_afk_list(sender=None, msg=None):
     """
     Get afkmover saved client channels. Mainly for debugging.
     """
     if afkMover is not None:
-        Bot.send_msg_to_client(bot.ts3conn, sender, str(afkMover.client_channels))
+        Bot.send_msg_to_client(bot.ts3conn, sender,
+                               str(afkMover.client_channels))
 
 
 @event(Events.ClientLeftEvent,)
@@ -57,8 +59,8 @@ def client_left(event):
 
 
 @setup
-def setup(ts3bot,channel="AFK"):
-    global bot,channel_name
+def setup(ts3bot, channel="AFK"):
+    global bot, channel_name
     bot = ts3bot
     channel_name = channel
     if autoStart:
@@ -152,7 +154,7 @@ class AfkMover(Thread):
         :return: List of clients who are back from afk.
         """
         clientlist = [client for client in self.afk_list if client.get("client_away", '1') == '0' and int(client.get("cid",
-                                                                                                                  '-1'))
+                                                                                                                     '-1'))
                       == int(self.afk_channel)]
         return clientlist
 
@@ -179,11 +181,15 @@ class AfkMover(Thread):
             AfkMover.logger.info("Moving somebody to afk!")
             AfkMover.logger.debug("Client: " + str(client))
             try:
-                self.ts3conn.clientmove(self.afk_channel, int(client.get("clid", '-1')))
+                self.ts3conn.clientmove(
+                    self.afk_channel, int(client.get("clid", '-1')))
             except TS3Exception:
-                AfkMover.logger.exception("Error moving client! Clid=" + str(client.get("clid", '-1')))
-            self.client_channels[client.get("clid", '-1')] = client.get("cid", '0')
-            AfkMover.logger.debug("Moved List after move: " + str(self.client_channels))
+                AfkMover.logger.exception(
+                    "Error moving client! Clid=" + str(client.get("clid", '-1')))
+            self.client_channels[client.get(
+                "clid", '-1')] = client.get("cid", '0')
+            AfkMover.logger.debug(
+                "Moved List after move: " + str(self.client_channels))
 
     def move_all_afk(self):
         """
@@ -202,13 +208,16 @@ class AfkMover(Thread):
         back_list = self.get_back_list()
         AfkMover.logger.debug("Moving clients back")
         AfkMover.logger.debug("Backlist is: " + str(back_list))
-        AfkMover.logger.debug("Saved channel list keys are:" + str(self.client_channels.keys()) + "\n")
+        AfkMover.logger.debug(
+            "Saved channel list keys are:" + str(self.client_channels.keys()) + "\n")
         for client in back_list:
             if client.get("clid", -1) in self.client_channels.keys():
                 AfkMover.logger.info("Moving a client back!")
                 AfkMover.logger.debug("Client: " + str(client))
-                AfkMover.logger.debug("Saved channel list keys:" + str(self.client_channels))
-                self.ts3conn.clientmove(self.client_channels.get(client.get("clid", -1)), int(client.get("clid", '-1')))
+                AfkMover.logger.debug(
+                    "Saved channel list keys:" + str(self.client_channels))
+                self.ts3conn.clientmove(self.client_channels.get(
+                    client.get("clid", -1)), int(client.get("clid", '-1')))
                 del self.client_channels[client.get("clid", '-1')]
 
     def auto_move_all(self):
@@ -222,9 +231,11 @@ class AfkMover(Thread):
                 self.move_all_back()
                 self.move_all_afk()
             except:
-                AfkMover.logger.error("Uncaught exception:" + str(sys.exc_info()[0]))
+                AfkMover.logger.error(
+                    "Uncaught exception:" + str(sys.exc_info()[0]))
                 AfkMover.logger.error(str(sys.exc_info()[1]))
                 AfkMover.logger.error(traceback.format_exc())
-                AfkMover.logger.error("Saved channel list keys are:" + str(self.client_channels.keys()) + "\n")
+                AfkMover.logger.error(
+                    "Saved channel list keys are:" + str(self.client_channels.keys()) + "\n")
         AfkMover.logger.warning("AFKMover stopped!")
         self.client_channels = {}

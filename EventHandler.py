@@ -1,5 +1,5 @@
 """EventHandler for the Teamspeak3 Bot."""
-import ts3.Events as Events
+import ts3API.Events as Events
 import logging
 import threading
 
@@ -11,7 +11,8 @@ class EventHandler(object):
     logger = logging.getLogger("eventhandler")
     logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler("eventhandler.log", mode='a+')
-    formatter = logging.Formatter('Eventhandler Logger %(asctime)s %(message)s')
+    formatter = logging.Formatter(
+        'Eventhandler Logger %(asctime)s %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.info("Configured Eventhandler logger")

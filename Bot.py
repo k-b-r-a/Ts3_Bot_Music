@@ -3,9 +3,9 @@ import logging
 from distutils.util import strtobool
 import configparser
 
-import ts3.TS3Connection
-from ts3.TS3Connection import TS3QueryException
-from ts3.TS3QueryExceptionType import TS3QueryExceptionType
+import ts3API.TS3Connection
+from ts3API.TS3Connection import TS3QueryException
+from ts3API.TS3QueryExceptionType import TS3QueryExceptionType
 import EventHandler
 import CommandHandler
 import Moduleloader
@@ -28,7 +28,7 @@ def send_msg_to_client(ts3conn, clid, msg):
     """
     try:
         ts3conn.sendtextmessage(targetmode=2, target=clid, msg=msg)
-    except ts3.TS3Connection.TS3QueryException:
+    except ts3API.TS3Connection.TS3QueryException:
         logger = logging.getLogger("bot")
         logger.exception("Error sending a message to clid " + str(clid))
 
@@ -37,6 +37,7 @@ class Ts3Bot:
     """
     Teamspeak 3 Bot with module support.
     """
+
     def get_channel_id(self, name):
         """
         Covenience method for getting a channel by name.
@@ -88,14 +89,15 @@ class Ts3Bot:
         :return:
         """
         try:
-            self.ts3conn = ts3.TS3Connection.TS3Connection(self.host, self.port,
-                                                           use_ssh=self.is_ssh, username=self.user,
-                                                           password=self.password, accept_all_keys=self.accept_all_keys,
-                                                           host_key_file=self.host_key_file,
-                                                           use_system_hosts=self.use_system_hosts, sshtimeout=self.sshtimeout, sshtimeoutlimit=self.sshtimeoutlimit)
+            self.ts3conn = ts3API.TS3Connection.TS3Connection(self.host, self.port,
+                                                              use_ssh=self.is_ssh, username=self.user,
+                                                              password=self.password, accept_all_keys=self.accept_all_keys,
+                                                              host_key_file=self.host_key_file,
+                                                              use_system_hosts=self.use_system_hosts, sshtimeout=self.sshtimeout, sshtimeoutlimit=self.sshtimeoutlimit)
             # self.ts3conn.login(self.user, self.password)
-        except ts3.TS3Connection.TS3QueryException:
-            self.logger.exception("Error while connecting, IP propably not whitelisted or Login data wrong!")
+        except ts3API.TS3Connection.TS3QueryException:
+            self.logger.exception(
+                "Error while connecting, IP propably not whitelisted or Login data wrong!")
             # This is a very ungraceful exit!
             os._exit(-1)
             raise
@@ -111,7 +113,7 @@ class Ts3Bot:
         """
         try:
             self.ts3conn.use(sid=self.sid)
-        except ts3.TS3Connection.TS3QueryException:
+        except ts3API.TS3Connection.TS3QueryException:
             self.logger.exception("Error on use SID")
             exit()
         try:
@@ -119,15 +121,18 @@ class Ts3Bot:
                 self.ts3conn.clientupdate(["client_nickname=" + self.bot_name])
             except TS3QueryException as e:
                 if e.type == TS3QueryExceptionType.CLIENT_NICKNAME_INUSE:
-                    self.logger.info("The choosen bot nickname is already in use, keeping the default nickname")
+                    self.logger.info(
+                        "The choosen bot nickname is already in use, keeping the default nickname")
                 else:
                     raise e
             try:
                 self.channel = self.get_channel_id(self.default_channel)
-                self.ts3conn.clientmove(self.channel, int(self.ts3conn.whoami()["client_id"]))
+                self.ts3conn.clientmove(self.channel, int(
+                    self.ts3conn.whoami()["client_id"]))
             except TS3QueryException as e:
                 if e.type == TS3QueryExceptionType.CHANNEL_ALREADY_IN:
-                    self.logger.info("The bot is already in the configured default channel")
+                    self.logger.info(
+                        "The bot is already in the configured default channel")
                 else:
                     raise e
         except TS3QueryException:
@@ -135,12 +140,16 @@ class Ts3Bot:
             self.ts3conn.quit()
             return
         self.command_handler = CommandHandler.CommandHandler(self.ts3conn)
-        self.event_handler = EventHandler.EventHandler(ts3conn=self.ts3conn, command_handler=self.command_handler)
+        self.event_handler = EventHandler.EventHandler(
+            ts3conn=self.ts3conn, command_handler=self.command_handler)
         try:
-            self.ts3conn.register_for_server_events(self.event_handler.on_event)
-            self.ts3conn.register_for_channel_events(0, self.event_handler.on_event,weak_ref=True)
-            self.ts3conn.register_for_private_messages(self.event_handler.on_event)
-        except ts3.TS3Connection.TS3QueryException:
+            self.ts3conn.register_for_server_events(
+                self.event_handler.on_event)
+            self.ts3conn.register_for_channel_events(
+                0, self.event_handler.on_event, weak_ref=True)
+            self.ts3conn.register_for_private_messages(
+                self.event_handler.on_event)
+        except ts3API.TS3Connection.TS3QueryException:
             self.logger.exception("Error on registering for events.")
             exit()
 

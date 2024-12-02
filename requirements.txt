@@ -1,5 +1,6 @@
 blinker==1.4
-paramiko[ssh]
-numpy
+paramiko
 selenium
 requests
+setuptools
+ts3API
